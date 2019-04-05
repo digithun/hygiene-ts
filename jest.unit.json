@@ -1,0 +1,24 @@
+{
+  "displayName": "unit",
+  "testURL": "http://localhost/",
+  "verbose": true,
+  "globals": {
+    "ts-jest": {
+      "skipBabel": true
+    }
+  },
+  "transform": {
+    "^.+\\.tsx?$": "ts-jest"
+  },
+  "reporters": ["default"],
+  "testEnvironment": "node",
+  "collectCoverageFrom": [
+    "<rootDir>/**/*.ts",
+    "!<rootDir>/**/__test__/**/*.ts",
+    "!<rootDir>/**/seeders/**/*.ts",
+    "!<rootDir>/**/migrations/**/*.ts"
+  ],
+  "testMatch": ["<rootDir>/**/*.test.ts"],
+  "testPathIgnorePatterns": ["/node_modules/"],
+  "moduleFileExtensions": ["ts", "js"]
+}

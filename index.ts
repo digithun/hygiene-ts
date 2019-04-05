@@ -1,2 +1,2 @@
-export * from './common/errors'
-export * from './common/endpoint'
+export * from './lib/errors'
+export * from './lib/endpoint'
