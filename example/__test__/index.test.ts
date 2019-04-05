@@ -32,7 +32,10 @@ describe('Test example', () => {
         resolve()
       })
       const yoga = new GraphQLServer({
-        schema: core.graphqlSchema
+        schema: core.graphqlSchema,
+        context: params => {
+          return params.request
+        }
       })
       graphqlServ = await yoga.start({
         port: 3001
@@ -48,7 +51,8 @@ describe('Test example', () => {
         name: 'Have a dinner'
       }),
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-api-key': 'REST_KEY'
       }
     })
 
@@ -65,7 +69,8 @@ describe('Test example', () => {
     const resp = await fetch('http://localhost:3001/', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-api-key': 'GRAPHQL_KEY'
       },
       body: JSON.stringify({
         query: gql`
@@ -79,13 +84,11 @@ describe('Test example', () => {
       })
     })
     expect(resp.status).toEqual(200)
-
     const body = await resp.json()
     expect(body.data.createTodo.name).toEqual('Sleep for 8 hrs')
 
     expect(users).toHaveLength(1)
     expect(todos).toHaveLength(1)
-
   })
 
   afterEach(async () => {

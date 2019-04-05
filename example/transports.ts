@@ -28,7 +28,7 @@ export function registerGraphQLTransports(core: HygieneKernel, endpoints: TodoEn
 }
 
 function newGraphQLCreateTodoReqDecoder(): GraphQLRequestDecoder<CreateTodoWithUsernameInput, null, { name: string; username: string }> {
-  return async function(request) {
+  return async function(ctx, request) {
     return {
       name: request.args.name,
       username: request.args.username
@@ -37,7 +37,7 @@ function newGraphQLCreateTodoReqDecoder(): GraphQLRequestDecoder<CreateTodoWithU
 }
 
 function newGraphQLCreateTodoResEncoder(): GraphQLResponseEncoder<CreateTodoWithUsernameOutput> {
-  return async output => {
+  return async ( ctx, output ) => {
     return {
       data: output.data
     }
@@ -66,7 +66,7 @@ const PostTodoReqRule = joi.object().keys({
     .required()
 })
 function newHTTPPostTodoReqDecoder(): HTTPRequestDecoder<CreateTodoWithUsernameInput> {
-  return async req => {
+  return async ( ctx, req ) => {
     const { value, error } = joi.validate<Pick<CreateTodoWithUsernameInput, 'username' | 'name'>>(req.GetBodyOrThrow(), PostTodoReqRule)
     if (error) {
       throw error
@@ -79,7 +79,7 @@ function newHTTPPostTodoReqDecoder(): HTTPRequestDecoder<CreateTodoWithUsernameI
 }
 
 function newHTTPPostTodoResEncoder(): HTTPResponseEncoder<CreateTodoWithUsernameOutput> {
-  return output => {
+  return ( ctx, output ) => {
     return newHTTPResponse(output).setStatusCode(201)
   }
 }

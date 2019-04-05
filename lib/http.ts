@@ -25,7 +25,7 @@ export class Response<T = any> {
     this.data = data
     return this
   }
-  setStatusCode(code: number){
+  setStatusCode(code: number) {
     this.code = code
     return this
   }
@@ -49,10 +49,7 @@ export class HTTPRequest {
   GetHeaderOrThrow = (key: string) => {
     const output = this.GetHeader(key)
     if (typeof output === 'undefined') {
-      throw newGlobError(
-        GlobErrorType.InputError,
-        `Invalid headers missing ${key}`
-      )
+      throw newGlobError(GlobErrorType.InputError, `Invalid headers missing ${key}`)
     }
     return output
   }
@@ -74,10 +71,7 @@ export class HTTPRequest {
 
   GetQueryOrThrow = (key: string): string => {
     if (typeof this.req.query[key] === 'undefined') {
-      throw newGlobError(
-        GlobErrorType.InputError,
-        `Query parameter name ${key} is required`
-      )
+      throw newGlobError(GlobErrorType.InputError, `Query parameter name ${key} is required`)
     }
     return this.req.query[key]
   }
@@ -88,21 +82,17 @@ export class HTTPRequest {
 
   GetParamOrThrow = (key: string): string => {
     if (typeof this.req.params[key] === 'undefined') {
-      throw newGlobError(
-        GlobErrorType.InputError,
-        `Param parameter name ${key} is required`
-      )
+      throw newGlobError(GlobErrorType.InputError, `Param parameter name ${key} is required`)
     }
     return this.req.params[key]
   }
 }
 
-export type HTTPResponseEncoder<Output> = (output: Output) => Response
+export type HTTPResponseEncoder<Output, Context extends HygieneBaseContext = HygieneBaseContext> = (ctx: Context, output: Output) => Response
 export type HTTPResponseDecoder<Output> = (output: Response<Output>) => Output
 
-export type HTTPRequestDecoder<Input> = (c: HTTPRequest) => Promise<Input>
+export type HTTPRequestDecoder<Input, Context extends HygieneBaseContext = HygieneBaseContext> = (ctx: Context, c: HTTPRequest) => Promise<Input>
 export type HTTPRequestEncoder<Input> = (input: Input) => Promise<HTTPRequest>
-
 
 export type HTTPResolver = (req: express.Request, res: express.Response) => Promise<void>
 export function newHTTPResolver<In, Out>(
@@ -112,15 +102,14 @@ export function newHTTPResolver<In, Out>(
   ...middlewares: Middleware[]
 ) {
   return async (req: express.Request, res: express.Response) => {
-
     const request = new HTTPRequest(req)
     const ctx: HygieneBaseContext = {
       req: request
     }
     await applyMiddlwares(ctx, middlewares)
-    const input = await decoder(request)
+    const input = await decoder(ctx, request)
     const output = await endpoint(ctx, input)
-    const response = await encoder(output)
+    const response = await encoder(ctx, output)
 
     // Set HTTP Status code from response encoder
     res.status(response.code)
@@ -129,11 +118,10 @@ export function newHTTPResolver<In, Out>(
       res.setHeader(key, response.headers[key])
     })
 
-    if(response.headers['Content-Type'] === 'application/json') {
+    if (response.headers['Content-Type'] === 'application/json') {
       res.json(response.data)
     } else {
       res.send(response.data)
     }
-
   }
 }

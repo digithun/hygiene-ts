@@ -22,7 +22,10 @@ async function bootstrap() {
     console.log('Server is ready')
   })
   const yoga = new GraphQLServer({
-    schema: core.graphqlSchema
+    schema: core.graphqlSchema,
+    context: (params) => {
+      return params.request
+    }
   })
   await yoga.start({
     port: 3001

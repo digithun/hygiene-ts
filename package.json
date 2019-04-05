@@ -12,6 +12,9 @@
     "joi": "^14.3.1",
     "uuid": "^3.3.2"
   },
+  "scripts": {
+    "test": "yarn jest --config jest.json"
+  },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
     "@types/chalk": "^2.2.0",
