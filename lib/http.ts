@@ -1,7 +1,7 @@
 import * as express from 'express'
 import { newGlobError, GlobErrorType } from './errors'
 import { EndpointFunc, HygieneBaseContext } from './endpoint'
-import { Middleware, applyMiddlwares } from './middlewares'
+import { Middleware, applyMiddlwares } from './middleware'
 
 export class Response<T = any> {
   data: T

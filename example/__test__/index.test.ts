@@ -2,12 +2,10 @@ import { InMemoryTodoRepository, InMemoryUserRepository } from '../repositories'
 import { DefaultTodoUseCase } from '../usecase'
 import { newTodoEndpoints } from '../endpoints'
 import { GraphQLServer } from 'graphql-yoga'
-import {
-  registerHTTPTransports,
-  registerGraphQLTransports
-} from '../transports'
+import { registerHTTPTransports, registerGraphQLTransports } from '../transports'
 import { HygieneKernel } from '../../lib/kernel'
 import { createServer, Server } from 'http'
+import gql from 'graphql-tag'
 const fetch = require('node-fetch')
 
 describe('Test example', () => {
@@ -15,7 +13,7 @@ describe('Test example', () => {
   let graphqlServ: Server
   let todos: []
   let users: []
-  beforeAll(async () => {
+  beforeEach(async () => {
     todos = []
     users = []
     const todoRepository = new InMemoryTodoRepository(todos)
@@ -64,10 +62,33 @@ describe('Test example', () => {
     expect(todos).toHaveLength(1)
   })
   it('should GraphQL Create todo create new todo and user if not exists', async () => {
+    const resp = await fetch('http://localhost:3001/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: gql`
+          mutation {
+            createTodo(name: "Sleep for 8 hrs", username: "Dylan") {
+              id
+              name
+            }
+          }
+        `
+      })
+    })
+    expect(resp.status).toEqual(200)
+
+    const body = await resp.json()
+    expect(body.data.createTodo.name).toEqual('Sleep for 8 hrs')
+
+    expect(users).toHaveLength(1)
+    expect(todos).toHaveLength(1)
 
   })
 
-  afterAll(async () => {
+  afterEach(async () => {
     return new Promise((resolve, reject) => {
       httpServ.close(() => {
         graphqlServ.close(() => {

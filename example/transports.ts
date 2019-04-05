@@ -1,22 +1,12 @@
-import { HygieneKernel } from '../lib/kernel'
-import {
-  TodoEndpoints,
-  CreateTodoWithUsernameInput,
-  CreateTodoWithUsernameOutput
-} from './endpoints'
-import {
-  newHTTPResolver,
-  HTTPRequestDecoder,
-  HTTPResponseEncoder,
-  newHTTPResponse
-} from '../lib/http'
-import gql from 'graphql-tag'
 import * as joi from 'joi'
+import gql from 'graphql-tag'
+import { HygieneKernel } from '../lib/kernel'
+import { TodoEndpoints, CreateTodoWithUsernameInput, CreateTodoWithUsernameOutput } from './endpoints'
+import { newHTTPResolver, HTTPRequestDecoder, HTTPResponseEncoder, newHTTPResponse } from '../lib/http'
+import { newGraphQLResolver, GraphQLRequestDecoder, GraphQLResponseEncoder } from '../lib/graphql'
 
-export function registerGraphQLTransports(
-  core: HygieneKernel,
-  endpoints: TodoEndpoints
-) {
+// GraphQL Transport Layer with Decoder and Encoder of each endpoints
+export function registerGraphQLTransports(core: HygieneKernel, endpoints: TodoEndpoints) {
   const typeDefs = gql`
     type Todo {
       name: String!
@@ -30,21 +20,38 @@ export function registerGraphQLTransports(
       createTodo(name: String!, username: String!): Todo!
     }
   `
-  core.registerGraphQLResolvers(typeDefs, {})
+  core.registerGraphQLResolvers(typeDefs, {
+    Mutation: {
+      createTodo: newGraphQLResolver(endpoints.CreateTodoWithUsername, newGraphQLCreateTodoReqDecoder(), newGraphQLCreateTodoResEncoder())
+    }
+  })
 }
 
-export function registerHTTPTransports(
-  core: HygieneKernel,
-  endpoints: TodoEndpoints
-) {
+function newGraphQLCreateTodoReqDecoder(): GraphQLRequestDecoder<CreateTodoWithUsernameInput, null, { name: string; username: string }> {
+  return async function(request) {
+    return {
+      name: request.args.name,
+      username: request.args.username
+    }
+  }
+}
+
+function newGraphQLCreateTodoResEncoder(): GraphQLResponseEncoder<CreateTodoWithUsernameOutput> {
+  return async output => {
+    return {
+      data: output.data
+    }
+  }
+}
+
+
+
+// Restful HTTP service with decoder and encoder of each endpoints
+export function registerHTTPTransports(core: HygieneKernel, endpoints: TodoEndpoints) {
   core.registerHTTPResolver(
     'post',
     '/todo',
-    newHTTPResolver(
-      endpoints.CreateTodoWithUsername,
-      newPostTodoReqDecoder(),
-      newPostTodoResEncoder()
-    )
+    newHTTPResolver(endpoints.CreateTodoWithUsername, newHTTPPostTodoReqDecoder(), newHTTPPostTodoResEncoder())
   )
 }
 
@@ -58,13 +65,9 @@ const PostTodoReqRule = joi.object().keys({
     .max(50)
     .required()
 })
-function newPostTodoReqDecoder(): HTTPRequestDecoder<
-  CreateTodoWithUsernameInput
-> {
+function newHTTPPostTodoReqDecoder(): HTTPRequestDecoder<CreateTodoWithUsernameInput> {
   return async req => {
-    const { value, error } = joi.validate<
-      Pick<CreateTodoWithUsernameInput, 'username' | 'name'>
-    >(req.GetBodyOrThrow(), PostTodoReqRule)
+    const { value, error } = joi.validate<Pick<CreateTodoWithUsernameInput, 'username' | 'name'>>(req.GetBodyOrThrow(), PostTodoReqRule)
     if (error) {
       throw error
     }
@@ -75,9 +78,7 @@ function newPostTodoReqDecoder(): HTTPRequestDecoder<
   }
 }
 
-function newPostTodoResEncoder(): HTTPResponseEncoder<
-  CreateTodoWithUsernameOutput
-> {
+function newHTTPPostTodoResEncoder(): HTTPResponseEncoder<CreateTodoWithUsernameOutput> {
   return output => {
     return newHTTPResponse(output).setStatusCode(201)
   }

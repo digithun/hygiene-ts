@@ -1,5 +1,5 @@
 import { EndpointFunc, HygieneBaseContext } from './endpoint'
-import { Middleware, applyMiddlwares } from './middlewares'
+import { Middleware, applyMiddlwares } from './middleware'
 
 export class GraphQLRequest<Root = any, Args = any, Context extends HygieneBaseContext = HygieneBaseContext> {
   root: Root
@@ -19,7 +19,7 @@ export class GraphQLResponse<T = any> {
   }
 }
 
-export type GraphQLRequestDecoder<Input, R, A, C extends HygieneBaseContext> = (request: GraphQLRequest<R, A, C>) => Promise<Input>
+export type GraphQLRequestDecoder<Input, R = any, A = any, C extends HygieneBaseContext = HygieneBaseContext> = (request: GraphQLRequest<R, A, C>) => Promise<Input>
 export type GraphQLResponseEncoder<Output> = (output: Output) => Promise<GraphQLResponse>
 
 export function newGraphQLResolver<Input, Output, Root = any, Args = any, Context extends HygieneBaseContext = HygieneBaseContext>(
