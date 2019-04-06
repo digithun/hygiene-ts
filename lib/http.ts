@@ -1,17 +1,17 @@
 import * as express from 'express'
-import { newGlobError, GlobErrorType } from './errors'
+import { newGlobError, GlobErrorType, GlobError } from './errors'
 import { EndpointFunc, HygieneBaseContext } from './endpoint'
 import { Middleware, applyMiddlwares } from './middleware'
 
 export class Response<T = any> {
-  data: T
+  data?: T
   code: number
 
   headers: { [key: string]: string } = {
     'Content-Type': 'application/json'
   }
 
-  constructor(data: T) {
+  constructor(data?: T) {
     this.data = data
     this.code = 200
   }
@@ -31,7 +31,7 @@ export class Response<T = any> {
   }
 }
 
-export function newHTTPResponse<T>(data: T) {
+export function newHTTPResponse<T>(data?: T) {
   return new Response<T>(data)
 }
 
@@ -95,6 +95,39 @@ export type HTTPRequestDecoder<Input, Context extends HygieneBaseContext = Hygie
 export type HTTPRequestEncoder<Input> = (input: Input) => Promise<HTTPRequest>
 
 export type HTTPResolver = (req: express.Request, res: express.Response) => Promise<void>
+
+function HTTPErrorResponseEncoder(error: Error): Response {
+  if (error instanceof GlobError) {
+    let code = 500
+    switch (error.type) {
+      case GlobErrorType.AuthError:
+        code = 401
+        break
+      case GlobErrorType.ForbiddenError:
+        code = 403
+        break
+      case GlobErrorType.InputError:
+        code = 401
+        break
+      case GlobErrorType.NotFoundError:
+        code = 404
+        break
+    }
+    return newHTTPResponse()
+      .setStatusCode(code)
+      .setData({
+        message: error.message,
+        detail: error.detail
+      })
+  } else {
+    return newHTTPResponse()
+      .setStatusCode(500)
+      .setData({
+        message: error.message
+      })
+  }
+}
+
 export function newHTTPResolver<In, Out>(
   endpoint: EndpointFunc<In, Out>,
   decoder: HTTPRequestDecoder<In>,
@@ -106,22 +139,28 @@ export function newHTTPResolver<In, Out>(
     const ctx: HygieneBaseContext = {
       req: request
     }
-    await applyMiddlwares(ctx, middlewares)
-    const input = await decoder(ctx, request)
-    const output = await endpoint(ctx, input)
-    const response = await encoder(ctx, output)
+    try {
 
-    // Set HTTP Status code from response encoder
-    res.status(response.code)
-    // Set each header value to response header
-    Object.keys(response.headers).forEach(key => {
-      res.setHeader(key, response.headers[key])
-    })
+      await applyMiddlwares(ctx, middlewares)
+      const input = await decoder(ctx, request)
+      const output = await endpoint(ctx, input)
+      const response = await encoder(ctx, output)
+      // Set HTTP Status code from response encoder
+      res.status(response.code)
+      // Set each header value to response header
+      Object.keys(response.headers).forEach(key => {
+        res.setHeader(key, response.headers[key])
+      })
 
-    if (response.headers['Content-Type'] === 'application/json') {
+      if (response.headers['Content-Type'] === 'application/json') {
+        res.json(response.data)
+      } else {
+        res.send(response.data)
+      }
+    } catch (e) {
+      const response = HTTPErrorResponseEncoder(e)
+      res.status(response.code)
       res.json(response.data)
-    } else {
-      res.send(response.data)
     }
   }
 }

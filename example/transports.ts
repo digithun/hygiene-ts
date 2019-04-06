@@ -4,9 +4,13 @@ import { HygieneKernel } from '../lib/kernel'
 import { TodoEndpoints, CreateTodoWithUsernameInput, CreateTodoWithUsernameOutput } from './endpoints'
 import { newHTTPResolver, HTTPRequestDecoder, HTTPResponseEncoder, newHTTPResponse } from '../lib/http'
 import { newGraphQLResolver, GraphQLRequestDecoder, GraphQLResponseEncoder } from '../lib/graphql'
+import { newAPIKeyMiddleware } from './middlewares';
 
 // GraphQL Transport Layer with Decoder and Encoder of each endpoints
 export function registerGraphQLTransports(core: HygieneKernel, endpoints: TodoEndpoints) {
+
+  const apiKeyMiddleware = newAPIKeyMiddleware("GRAPHQL_KEY")
+
   const typeDefs = gql`
     type Todo {
       name: String!
@@ -22,7 +26,7 @@ export function registerGraphQLTransports(core: HygieneKernel, endpoints: TodoEn
   `
   core.registerGraphQLResolvers(typeDefs, {
     Mutation: {
-      createTodo: newGraphQLResolver(endpoints.CreateTodoWithUsername, newGraphQLCreateTodoReqDecoder(), newGraphQLCreateTodoResEncoder())
+      createTodo: newGraphQLResolver(endpoints.CreateTodoWithUsername, newGraphQLCreateTodoReqDecoder(), newGraphQLCreateTodoResEncoder(), apiKeyMiddleware)
     }
   })
 }
@@ -48,10 +52,12 @@ function newGraphQLCreateTodoResEncoder(): GraphQLResponseEncoder<CreateTodoWith
 
 // Restful HTTP service with decoder and encoder of each endpoints
 export function registerHTTPTransports(core: HygieneKernel, endpoints: TodoEndpoints) {
+
+  const apiKeyMiddleware = newAPIKeyMiddleware("REST_API_KEY")
   core.registerHTTPResolver(
     'post',
     '/todo',
-    newHTTPResolver(endpoints.CreateTodoWithUsername, newHTTPPostTodoReqDecoder(), newHTTPPostTodoResEncoder())
+    newHTTPResolver(endpoints.CreateTodoWithUsername, newHTTPPostTodoReqDecoder(), newHTTPPostTodoResEncoder(), apiKeyMiddleware)
   )
 }
 

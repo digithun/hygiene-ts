@@ -35,7 +35,7 @@ describe('Test example', () => {
         schema: core.graphqlSchema,
         context: params => {
           return params.request
-        }
+        },
       })
       graphqlServ = await yoga.start({
         port: 3001
@@ -52,7 +52,7 @@ describe('Test example', () => {
       }),
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'REST_KEY'
+        'x-api-key': 'REST_API_KEY'
       }
     })
 
@@ -65,6 +65,22 @@ describe('Test example', () => {
     expect(users).toHaveLength(1)
     expect(todos).toHaveLength(1)
   })
+
+  it('Should API key middleware work correctly', async () => {
+    const resp = await fetch('http://localhost:3000/todo', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: 'bob',
+        name: 'Have a dinner'
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'REST_API_KEYY'
+      }
+    })
+    expect(resp.status).toEqual(403)
+  })
+
   it('should GraphQL Create todo create new todo and user if not exists', async () => {
     const resp = await fetch('http://localhost:3001/', {
       method: 'POST',

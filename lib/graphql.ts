@@ -1,6 +1,5 @@
 import { EndpointFunc, HygieneBaseContext } from './endpoint'
 import { Middleware, applyMiddlwares } from './middleware'
-import { IncomingMessage } from 'http';
 import { newGlobError, GlobErrorType } from './errors';
 import { HTTPRequest } from './http';
 
@@ -42,11 +41,13 @@ export function newGraphQLResolver<Input, Output>(
     const ctx: HygieneBaseContext = {
       req: new HTTPRequest(graphQLContext)
     }
+
     const request = new GraphQLRequest<any, any>(root, args)
     await applyMiddlwares(ctx, middlewares)
     const input = await decoder(ctx, request)
     const output = await endpoint(ctx, input)
     const response = await encoder(ctx, output)
+
     return response.data
   }
 }

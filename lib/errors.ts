@@ -13,6 +13,7 @@ export function newGlobError(type: GlobErrorType, message: string): GlobError {
 export class GlobError extends Error {
   type: GlobErrorType
   debug: any
+  detail: any[] = []
 
   constructor(type: GlobErrorType, message: string) {
     super(message)
@@ -21,6 +22,11 @@ export class GlobError extends Error {
 
   public withDebug(debug: any) {
     this.debug = debug
+    return this
+  }
+
+  addDetail = (d: any) => {
+    this.detail.push(d)
     return this
   }
 }
