@@ -4,12 +4,11 @@ import { HygieneKernel } from '../lib/kernel'
 import { TodoEndpoints, CreateTodoWithUsernameInput, CreateTodoWithUsernameOutput } from './endpoints'
 import { newHTTPResolver, HTTPRequestDecoder, HTTPResponseEncoder, newHTTPResponse } from '../lib/http'
 import { newGraphQLResolver, GraphQLRequestDecoder, GraphQLResponseEncoder } from '../lib/graphql'
-import { newAPIKeyMiddleware } from './middlewares';
+import { newAPIKeyMiddleware } from './middlewares'
 
 // GraphQL Transport Layer with Decoder and Encoder of each endpoints
 export function registerGraphQLTransports(core: HygieneKernel, endpoints: TodoEndpoints) {
-
-  const apiKeyMiddleware = newAPIKeyMiddleware("GRAPHQL_KEY")
+  const apiKeyMiddleware = newAPIKeyMiddleware('GRAPHQL_KEY')
 
   const typeDefs = gql`
     type Todo {
@@ -26,7 +25,12 @@ export function registerGraphQLTransports(core: HygieneKernel, endpoints: TodoEn
   `
   core.registerGraphQLResolvers(typeDefs, {
     Mutation: {
-      createTodo: newGraphQLResolver(endpoints.CreateTodoWithUsername, newGraphQLCreateTodoReqDecoder(), newGraphQLCreateTodoResEncoder(), apiKeyMiddleware)
+      createTodo: newGraphQLResolver(
+        endpoints.CreateTodoWithUsername,
+        newGraphQLCreateTodoReqDecoder(),
+        newGraphQLCreateTodoResEncoder(),
+        apiKeyMiddleware
+      )
     }
   })
 }
@@ -41,19 +45,16 @@ function newGraphQLCreateTodoReqDecoder(): GraphQLRequestDecoder<CreateTodoWithU
 }
 
 function newGraphQLCreateTodoResEncoder(): GraphQLResponseEncoder<CreateTodoWithUsernameOutput> {
-  return async ( ctx, output ) => {
+  return async (ctx, output) => {
     return {
       data: output.data
     }
   }
 }
 
-
-
 // Restful HTTP service with decoder and encoder of each endpoints
 export function registerHTTPTransports(core: HygieneKernel, endpoints: TodoEndpoints) {
-
-  const apiKeyMiddleware = newAPIKeyMiddleware("REST_API_KEY")
+  const apiKeyMiddleware = newAPIKeyMiddleware('REST_API_KEY')
   core.registerHTTPResolver(
     'post',
     '/todo',
@@ -72,7 +73,7 @@ const PostTodoReqRule = joi.object().keys({
     .required()
 })
 function newHTTPPostTodoReqDecoder(): HTTPRequestDecoder<CreateTodoWithUsernameInput> {
-  return async ( ctx, req ) => {
+  return async (ctx, req) => {
     const { value, error } = joi.validate<Pick<CreateTodoWithUsernameInput, 'username' | 'name'>>(req.GetBodyOrThrow(), PostTodoReqRule)
     if (error) {
       throw error
@@ -85,7 +86,7 @@ function newHTTPPostTodoReqDecoder(): HTTPRequestDecoder<CreateTodoWithUsernameI
 }
 
 function newHTTPPostTodoResEncoder(): HTTPResponseEncoder<CreateTodoWithUsernameOutput> {
-  return ( ctx, output ) => {
+  return (ctx, output) => {
     return newHTTPResponse(output).setStatusCode(201)
   }
 }
